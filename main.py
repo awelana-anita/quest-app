@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from database import engine, Base, SessionLocal
 from pydantic import BaseModel
 import models
@@ -26,6 +26,12 @@ def home_root():
 @app.post("/register")
 def register_user(user: UserCreate):
     db = SessionLocal()
+    #send an error message if the user already exists in the database
+    existing_user = db.query(models.User).filter(models.User.email == user.email).first()
+    if existing_user:
+        db.close()
+        raise HTTPException(status_code=400, detail="User already exists")
+    
     #create a new user object from the data provided in the request
     new_user = models.User(email=user.email, display_name=user.display_name, xp=user.xp)
     #adds the new user to the database
